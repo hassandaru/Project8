@@ -17,6 +17,10 @@ class ViewController: UIViewController {
     var activatedButtons = [UIButton]()
     var solutions = [String]()
 
+    var clueString = ""
+    var solutionString = ""
+    var letterBits = [String]()
+    
     var score = 0 {
         didSet {
                 scoreLabel.text = "Score: \(score)"
@@ -25,6 +29,11 @@ class ViewController: UIViewController {
     var level = 1
     
     override func loadView() {
+        super.loadView()
+        viewSetup()
+    }
+    
+    func viewSetup() {
         view = UIView()
         view.backgroundColor = .white
         
@@ -163,13 +172,17 @@ class ViewController: UIViewController {
 //        cluesLabel.backgroundColor = .blue
 //        answersLabel.backgroundColor = .red
 //        buttonsView.backgroundColor = .green
+        
+        
     }
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        loadLevel()
+//        loadLevel()
+        performSelector(inBackground: #selector(loadLevel), with: false)
+        performSelector(onMainThread: #selector(updateViewAfterLevelSelected), with: nil, waitUntilDone: false)
     }
     
     @objc func letterTapped(_ sender: UIButton) {
@@ -219,10 +232,10 @@ class ViewController: UIViewController {
         
     }
     
-    func loadLevel() {
-        var clueString = ""
-        var solutionString = ""
-        var letterBits = [String]()
+    @objc func loadLevel() {
+        clueString = ""
+        solutionString = ""
+        letterBits = []
 
         if let levelFileURL = Bundle.main.url(forResource: "level\(level)", withExtension: "txt") {
             if let levelContents = try? String(contentsOf: levelFileURL) {
@@ -246,6 +259,10 @@ class ViewController: UIViewController {
             }
         }
 
+       
+    }
+    
+    @objc func updateViewAfterLevelSelected() {
         // Now configure the buttons and labels
         cluesLabel.text = clueString.trimmingCharacters(in: .whitespacesAndNewlines)
         answersLabel.text = solutionString.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -258,13 +275,16 @@ class ViewController: UIViewController {
             }
         }
     }
+    
     func levelUp(action: UIAlertAction) {
         level += 1
-        level = level % 2
+        if level >= 3  {
+            level = 1
+        }
         solutions.removeAll(keepingCapacity: true)
 
-        loadLevel()
-
+        performSelector(inBackground: #selector(loadLevel), with: false)
+        performSelector(onMainThread: #selector(updateViewAfterLevelSelected), with: nil, waitUntilDone: false)
         for btn in letterButtons {
             btn.isHidden = false
         }
