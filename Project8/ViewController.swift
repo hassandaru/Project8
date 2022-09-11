@@ -6,6 +6,30 @@
 //
 
 import UIKit
+extension UIView {
+    /// Helper function to update view's alpha with animation
+    /// - Parameter alpha: View's alpha
+    /// - Parameter animate: Indicate alpha changing with animation or not
+    /// - Parameter duration: Indicate time for animation
+    /// - Parameter completion: Completion block after alpha changing is finished
+    func set(alpha: CGFloat, animate: Bool, duration: TimeInterval = 0.7, completion: ((Bool) -> Void)? = nil) {
+        let animation = { (view: UIView) in
+            view.alpha = alpha
+        }
+    
+        if animate {
+            UIView.animate(withDuration: duration, animations: {
+                animation(self)
+            }, completion: { finished in
+                completion?(finished)
+            })
+        } else {
+            layer.removeAllAnimations()
+            animation(self)
+            completion?(true)
+        }
+    }
+}
 
 class ViewController: UIViewController {
     var cluesLabel: UILabel!
@@ -20,6 +44,7 @@ class ViewController: UIViewController {
     var clueString = ""
     var solutionString = ""
     var letterBits = [String]()
+    var selectedButton: UIButton!
     
     var score = 0 {
         didSet {
@@ -181,7 +206,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
 //        loadLevel()
-        performSelector(inBackground: #selector(loadLevel), with: false)
+    loadLevel()
         performSelector(onMainThread: #selector(updateViewAfterLevelSelected), with: nil, waitUntilDone: false)
     }
     
@@ -189,7 +214,24 @@ class ViewController: UIViewController {
         guard let buttonTitle = sender.titleLabel?.text else { return }
           currentAnswer.text = currentAnswer.text?.appending(buttonTitle)
           activatedButtons.append(sender)
-          sender.isHidden = true
+//          sender.isHidden = true
+            enableOrDisableButton(sender, enable: false)
+    }
+    
+    
+    func enableOrDisableButton(_ sender: UIButton, enable: Bool) {
+        selectedButton = sender
+        let alfaValue = enable ?  1.0 :  0.5
+        UIView.animate(withDuration: 2.0, delay: 0.9, usingSpringWithDamping: 0.6, initialSpringVelocity: 1, options: [.curveEaseIn], animations: {
+            self.selectedButton.transform = .identity
+            
+        }) { finished in
+            sender.alpha = alfaValue
+            sender.isEnabled = enable
+
+        }
+
+        
     }
 
     @objc func submitTapped(_ sender: UIButton) {
@@ -215,7 +257,9 @@ class ViewController: UIViewController {
                 score -= 1
                 activatedButtons.removeAll()
                 for btn in letterButtons {
-                    btn.isHidden = false
+//                    btn.isHidden = false
+                    enableOrDisableButton(btn, enable: true)
+
                 }
                 let ac = UIAlertController(title: "Oops!", message: "Incorrect guess. Try again", preferredStyle: .alert)
                 ac.addAction(UIAlertAction(title: "Ok", style: .default))
@@ -226,7 +270,8 @@ class ViewController: UIViewController {
     @objc func clearTapped(_ sender: UIButton) {
         currentAnswer.text = ""
         for btn in activatedButtons {
-               btn.isHidden = false
+//               btn.isHidden = false
+            enableOrDisableButton(btn, enable: true)
            }
         activatedButtons.removeAll()
         
@@ -286,7 +331,9 @@ class ViewController: UIViewController {
         performSelector(inBackground: #selector(loadLevel), with: false)
         performSelector(onMainThread: #selector(updateViewAfterLevelSelected), with: nil, waitUntilDone: false)
         for btn in letterButtons {
-            btn.isHidden = false
+//            btn.isHidden = false
+            enableOrDisableButton(btn, enable: true)
+
         }
     }
 
